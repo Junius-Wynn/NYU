@@ -1,0 +1,45 @@
+def greeting():
+    return "Hello! Welcome to the Abu Dhabi Bus Assistant. How can I help you?"
+
+
+def goodbye():
+    return "Goodbye! Have a safe journey!"
+
+
+def help():
+    return (
+        "I can help you with:\n"
+        "- Hafilat cards and prices\n"
+        "- Bus routes and stops\n"
+        "- Operating hours and schedules\n"
+        "- Bus fares\n"
+        "- Hafilat card recharge"
+    )
+
+
+def fallback():
+    return (
+        "Sorry, I didn't understand your question. "
+        "Please ask about Abu Dhabi buses or type 'help' "
+        "to see what I can assist you with."
+    )
+
+
+
+def detect_conversation_type(user_input):
+    text = user_input.lower().strip()
+
+    greetings = {"hello", "hi", "hey", "good morning"}
+    goodbyes = {"bye", "goodbye", "exit", "quit", "see you"}
+    help_commands = {"help", "what can you do", "help me"}
+
+    if text in greetings:
+        return "greeting"
+
+    elif text in goodbyes:
+        return "goodbye"
+
+    elif text in help_commands:
+        return "help"
+
+    return None
