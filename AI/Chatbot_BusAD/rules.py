@@ -1,10 +1,32 @@
+"""Eight intent rules, with explicit checks for unavailable route information."""
+from context import ROUTE_INTENTS
+from intent_detection import preprocess
 
-def generate_response(intent, knowledge_base):
+
+def generate_response(intent, knowledge_base, context=None, user_input=""):
     
     if intent is None or intent not in knowledge_base:
         return "Sorry, I don't have information about that. Ask me about Abu Dhabi buses or Hafilat cards."
 
     facts = knowledge_base[intent]
+    context = context or {}
+    route = context.get("current_route") or "170"
+    destination = context.get("current_destination")
+    words = set(preprocess(user_input).split())
+
+    if intent in ROUTE_INTENTS:
+        if route != "170":
+            return f"I don't have information for route {route}. My knowledge base only covers route 170."
+        if destination and destination not in knowledge_base["bus_routes"]["known_destinations"]:
+            return f"I don't have route information for {destination}. I only know the listed stops on route 170."
+        if intent in {"operating_hours", "bus_schedules"}:
+            if words & {"saturday", "sunday", "weekend", "weekends", "holiday", "holidays"}:
+                return ("I don't have weekend or holiday departure times. The stored timetable covers "
+                        "weekdays only. Check the official timetable: "
+                        f"{knowledge_base['bus_schedules']['timetable_source']}.")
+            if destination and destination != "Al Zeina":
+                return (f"I don't have departure times toward {destination}. The stored timetable only "
+                        "covers departures from NYU Abu Dhabi toward Al Zeina.")
 
     if intent == "hafilat_card":
         locations = ", ".join(facts.get("purchase_locations", []))
@@ -24,7 +46,8 @@ def generate_response(intent, knowledge_base):
                 f"{facts['route_170_end']}.")
 
     elif intent == "bus_routes":
-        return f"Route 170: {facts['route_170']}."
+        prefix = f"For travel to {destination}, " if destination else ""
+        return f"{prefix}Route {route}: {facts['route_170']}."
 
     elif intent == "card_recharge":
         locations = ", ".join(facts.get("recharge_locations", []))
@@ -35,17 +58,24 @@ def generate_response(intent, knowledge_base):
         return response
 
     elif intent == "bus_fares":
+        if words & {"discount", "discounts"}:
+            return (f"The stored policy lists free travel for children aged "
+                    f"{facts['free_travel_age_max']} and under. I don't have other discount policies.")
         return (f"The stored fare information is a base fare of "
                 f"{facts['base_fare']} {facts['currency']}, plus "
                 f"{facts['distance_fare']} {facts['currency']} per kilometer, "
                 f"up to {facts['maximum_fare']} {facts['currency']}.")
 
     elif intent == "bus_stops":
-        return (f"The main bus station is {facts['main_bus_station']}. "
+        prefix = "I can't determine your nearest stop without location data. " if "nearest" in words else ""
+        return (f"{prefix}The main bus station is {facts['main_bus_station']}. "
                 f"Route 170 serves {facts['route_170_stop']}.")
 
     elif intent == "bus_schedules":
-        return (f"For route 170 at NYU Abu Dhabi toward Al Zeina, the stored weekday "
+        frequency = (f"The stored example frequency is {facts['route_170_frequency_minutes']} minutes. "
+                     if words & {"often", "frequency"} else "")
+        return (f"{frequency}I don't have live arrival predictions. "
+                f"For route 170 at NYU Abu Dhabi toward Al Zeina, the stored weekday "
                 f"first departure is {facts['route_170_first_departure']} and the last "
                 f"is {facts['route_170_last_departure']}. Check the official timetable "
                 f"for exact departures: {facts['timetable_source']}.")

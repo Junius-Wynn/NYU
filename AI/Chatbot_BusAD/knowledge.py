@@ -1,3 +1,5 @@
+"""Static coursework data, not a live or newly verified transit feed."""
+
 knowledge_base = {
     "hafilat_card": {
         "description": (
@@ -36,6 +38,7 @@ knowledge_base = {
 
     "bus_routes": {
         "route_170": "Al Zeina - Abu Dhabi Bus Station - NYU Abu Dhabi",
+        "known_destinations": ["Al Zeina", "Abu Dhabi Bus Station", "NYU Abu Dhabi"],
     },
 
     "card_recharge": {
