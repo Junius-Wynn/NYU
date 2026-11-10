@@ -29,10 +29,14 @@ def generate_response(intent, knowledge_base, context=None, user_input=""):
                         "covers departures from NYU Abu Dhabi toward Al Zeina.")
 
     if intent == "hafilat_card":
-        locations = ", ".join(facts.get("purchase_locations", []))
+        anonymous_locations = ", ".join(facts["anonymous_purchase_locations"])
+        personalized_locations = ", ".join(facts["personalized_purchase_locations"])
+        if words & {"personalized", "personalised"}:
+            return f"Official personalized Hafilat card application channels: {personalized_locations}."
         types = ", ".join(facts.get("card_types", []))
         return (f"{facts['description']} Available card types: {types}. "
-                f"You can obtain one at: {locations}.")
+                f"Anonymous cards: {anonymous_locations}. "
+                f"Personalized card applications: {personalized_locations}.")
 
     elif intent == "card_pricing":
         anonymous = facts.get("anonymous_card_price")
@@ -41,8 +45,8 @@ def generate_response(intent, knowledge_base, context=None, user_input=""):
                 f"card costs {personalized} AED.")
 
     elif intent == "operating_hours":
-        return (f"For route 170, the first listed weekday departure from NYU Abu Dhabi "
-                f"toward Al Zeina is {facts['route_170_start']} and the last is "
+        return (f"For route 170, the first listed weekday departure from Saadiyat New York University 2 "
+                f"that reaches Al Zeina is {facts['route_170_start']} and the last is "
                 f"{facts['route_170_end']}.")
 
     elif intent == "bus_routes":
@@ -58,10 +62,13 @@ def generate_response(intent, knowledge_base, context=None, user_input=""):
         return response
 
     elif intent == "bus_fares":
+        if words & {"intercity", "dubai"} or {"inter", "city"} <= words:
+            return ("I don't have intercity bus fares, including services to Dubai. "
+                    f"The stored fare only covers {facts['service_scope']}.")
         if words & {"discount", "discounts"}:
-            return (f"The stored policy lists free travel for children aged "
+            return (f"For {facts['service_scope']}, the stored policy lists free travel for children aged "
                     f"{facts['free_travel_age_max']} and under. I don't have other discount policies.")
-        return (f"The stored fare information is a base fare of "
+        return (f"For {facts['service_scope']}, the stored fare is a base fare of "
                 f"{facts['base_fare']} {facts['currency']}, plus "
                 f"{facts['distance_fare']} {facts['currency']} per kilometer, "
                 f"up to {facts['maximum_fare']} {facts['currency']}.")
@@ -72,10 +79,10 @@ def generate_response(intent, knowledge_base, context=None, user_input=""):
                 f"Route 170 serves {facts['route_170_stop']}.")
 
     elif intent == "bus_schedules":
-        frequency = (f"The stored example frequency is {facts['route_170_frequency_minutes']} minutes. "
+        frequency = (f"{facts['route_170_frequency_note']} "
                      if words & {"often", "frequency"} else "")
         return (f"{frequency}I don't have live arrival predictions. "
-                f"For route 170 at NYU Abu Dhabi toward Al Zeina, the stored weekday "
+                f"For route 170 from Saadiyat New York University 2 reaching Al Zeina, the stored weekday "
                 f"first departure is {facts['route_170_first_departure']} and the last "
                 f"is {facts['route_170_last_departure']}. Check the official timetable "
                 f"for exact departures: {facts['timetable_source']}.")
